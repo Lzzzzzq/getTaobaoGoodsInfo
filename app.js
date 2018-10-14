@@ -7,27 +7,37 @@ const puppeteer = require('puppeteer');
       width: 375,
       height: 667
     },
+    // executablePath: '../../application/chrome',
     isMobile: true,
     // devtools: true,
     // args: ['--start-maximized'],
   });
-
+  
   try {
+
     const page = await browser.newPage();
-    // await page.goto('https://detail.tmall.com/item.htm?id=571672795767&ali_refid=a3_430583_1006:1125438179:N:JavaScript%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1:7398ea3e17099856997058b3847442f8&ali_trackid=1_7398ea3e17099856997058b3847442f8&spm=a230r.1.14.1');
-    // await page.goto('https://item.taobao.com/item.htm?spm=a230r.1.14.258.c11438ccB6zLo0&id=545948305821&ns=1&abbucket=10#detail');
-    
-    // await page.goto('https://item.taobao.com/item.htm?spm=a230r.1.14.22.57da43c8at3y9D&id=565969412455&ns=1&abbucket=10#detail');
+
+    // 纯文字商品（PC端）
     // await page.goto('https://item.taobao.com/item.htm?spm=a230r.1.14.20.c11438ccB6zLo0&id=574324982799&ns=1&abbucket=10#detail');
     
+    // 带图的商品（PC端）
+    // await page.goto('https://item.taobao.com/item.htm?spm=a230r.1.14.22.57da43c8at3y9D&id=565969412455&ns=1&abbucket=10#detail');
+
+    // 带图的商品（PC端）
+    // await page.goto('https://item.taobao.com/item.htm?spm=a230r.1.14.258.c11438ccB6zLo0&id=545948305821&ns=1&abbucket=10#detail');
+    
+    // 纯文字商品（移动端）
+    await page.goto('https://h5.m.taobao.com/awp/core/detail.htm?spm=a230r.1.14.20.c11438ccB6zLo0&id=574324982799&ns=1&abbucket=10#detail');
+    
+    // 带图的商品（移动端）
     // await page.goto('https://h5.m.taobao.com/awp/core/detail.htm?spm=a230r.1.14.258.c11438ccB6zLo0&id=545948305821&ns=1&abbucket=10#detail');
-    await page.goto('https://h5.m.taobao.com/awp/core/detail.htm?spm=a230r.1.14.22.57da43c8at3y9D&id=565969412455&ns=1&abbucket=10#detail');
+
+    // 带图的商品（移动端）
+    // await page.goto('https://h5.m.taobao.com/awp/core/detail.htm?spm=a230r.1.14.22.57da43c8at3y9D&id=565969412455&ns=1&abbucket=10#detail');
 
     await page.waitFor('.pic-gallery-wrapper')
     await scrollTo(page, 2000)
-    await page.waitForXPath('/html/body/div[1]/div[2]/div[2]/img')
-    // await page.waitFor(200)
-
+    await page.waitForXPath('/html/body/div[1]/div[2]/div[2]')
     let projectInfo = {}
 
     projectInfo = await getMobileTaobaoGoodsInfo(page)
@@ -36,7 +46,7 @@ const puppeteer = require('puppeteer');
   } catch (e) {
     console.error(e)
   }
-  // await browser.close();
+  await browser.close();
 
 })();
 
@@ -96,7 +106,6 @@ async function getMobileTaobaoGoodsInfo (page) {
        */
 
       // 获取描述缩略图
-      
       let desImgs = []
       let desDom = document.getElementsByClassName('detail-content') ? document.getElementsByClassName('detail-content')[0] : null
       if (desDom) {
@@ -110,13 +119,25 @@ async function getMobileTaobaoGoodsInfo (page) {
           }
         }
       }
+      // 描述中内容
+      let desPsDom = desDom.getElementsByTagName('p')
+      let desPs = []
+      if (desPsDom && desPsDom.length > 0) {
+        for (let i = 0 ; i < desPsDom.length ; i ++) {
+          let pCont = desPsDom[i].innerText
+          if (pCont) {
+            desPs.push(pCont)
+          }
+        }
+      }
 
       resolve({
         title: title,
         price: price,
         imgs: imgs,
         from: from,
-        desImgs: desImgs
+        desImgs: desImgs,
+        desPs: desPs
       })
       // console.log(title)
     })
