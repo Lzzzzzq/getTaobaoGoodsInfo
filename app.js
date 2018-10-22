@@ -35,12 +35,18 @@ const puppeteer = require('puppeteer');
     // 带图的商品（移动端）
     // await page.goto('https://h5.m.taobao.com/awp/core/detail.htm?spm=a230r.1.14.22.57da43c8at3y9D&id=565969412455&ns=1&abbucket=10#detail');
 
-    await page.waitFor('.pic-gallery-wrapper')
-    await scrollTo(page, 2000)
-    await page.waitForXPath('/html/body/div[1]/div[2]/div[2]')
+    // 带图的商品（移动端）天猫
+    await page.goto('https://detail.m.tmall.com/item.htm?id=571672795767&ali_refid=a3_430583_1006:1125438179:N:JavaScript%E7%A8%8B%E5%BA%8F%E8%AE%BE%E8%AE%A1:0e77fc1b1973708ffa1892506b48e83d&ali_trackid=1_0e77fc1b1973708ffa1892506b48e83d&spm=a230r.1.14.1')
+
     let projectInfo = {}
 
-    projectInfo = await getMobileTaobaoGoodsInfo(page)
+    // 淘宝移动端
+    // projectInfo = await getMobileTaobaoGoodsInfo(page)
+
+    // 天猫移动端
+    projectInfo = await getMobileTmallGoodsInfo(page)
+
+
     console.log(JSON.stringify(projectInfo, null, 2))
 
   } catch (e) {
@@ -50,11 +56,76 @@ const puppeteer = require('puppeteer');
 
 })();
 
+async function getMobileTmallGoodsInfo (page) {
+  await page.waitFor('.preview-scroller')
+  await scrollTo(page, 2000)
+  await page.waitForXPath('//*[@id="s-desc"]/p')
+  return page.evaluate(() => {
+    return new Promise((resolve, reject) => {
+      /**
+       * 获取深层对象，如不存在则返回 undefined
+       * @param {Array} a 键数组
+       * @param {Object} o 要获取值的对象
+       */
+      function getDeepObj (a, o) {
+        return a.reduce((r, i) => (r && r[i]), o)
+      }
+      /**
+       * 获取商品标题
+       */
+      let title = getDeepObj(['item', 'title'], _DATA_Mdskip)
+      let from = getDeepObj(['delivery', 'from'], _DATA_Mdskip)
+      let price = getDeepObj(['price', 'price', 'priceText'], _DATA_Mdskip)
+      let imgs = getDeepObj(['item', 'images'], _DATA_Detail)
+      
+      /**
+       * 获取描述
+       */
+
+      // 获取描述缩略图
+      let desImgs = []
+      let desDom = document.getElementById('s-desc')
+      if (desDom) {
+        let desImgsDom = desDom.getElementsByTagName('img')
+        if (desImgsDom && desImgsDom.length > 0) {
+          for (let i = 0 ; i < desImgsDom.length ; i ++) {
+            let imgUrl = desImgsDom[i].getAttribute('data-ks-lazyload') || desImgsDom[i].getAttribute('src')
+            desImgs.push(imgUrl)
+          }
+        }
+      }
+      // 描述中内容
+      let desPsDom = desDom.getElementsByTagName('p')
+      let desPs = []
+      if (desPsDom && desPsDom.length > 0) {
+        for (let i = 0 ; i < desPsDom.length ; i ++) {
+          let pCont = desPsDom[i].innerText
+          if (pCont) {
+            desPs.push(pCont)
+          }
+        }
+      }
+
+      resolve({
+        title,
+        price,
+        from,
+        imgs,
+        desImgs,
+        desPs
+      })
+    })
+  })
+}
+
 /**
  * 获取移动端淘宝页面商品信息
  * @param {Object} page page 对象
  */
 async function getMobileTaobaoGoodsInfo (page) {
+  await page.waitFor('.pic-gallery-wrapper')
+  await scrollTo(page, 2000)
+  await page.waitForXPath('/html/body/div[1]/div[2]/div[2]')
   return page.evaluate(() => {
     return new Promise((resolve, reject) => {
       /**
@@ -110,8 +181,6 @@ async function getMobileTaobaoGoodsInfo (page) {
       let desDom = document.getElementsByClassName('detail-content') ? document.getElementsByClassName('detail-content')[0] : null
       if (desDom) {
         let desImgsDom = desDom.getElementsByTagName('img')
-        console.log(desDom.innerHTML)
-        console.log(desImgsDom)
         if (desImgsDom && desImgsDom.length > 0) {
           for (let i = 0 ; i < desImgsDom.length ; i ++) {
             let imgUrl = desImgsDom[i].getAttribute('data-ks-lazyload') || desImgsDom[i].getAttribute('src')
